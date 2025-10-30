@@ -6,7 +6,7 @@ import { auth } from "./middleware/auth";
 const PORT = 8080;
 
 const app = express();
-
+app.use(cors())
 
 app.post("/signin", (req, res) => {
 
