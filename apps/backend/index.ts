@@ -1,10 +1,8 @@
 import express from "express";
 import cors from "cors"
 
-import { auth } from "./middleware/auth";
-import { SignupSchema } from "common/inputs";
-
-import jwt from 'jsonwebtoken'
+import userRouter from './routes/user'
+import adminRouter from './routes/admin'
 
 const PORT = 8080;
 
@@ -14,7 +12,6 @@ app.use(express.json());
 
 app.use("/user", userRouter);
 app.use("/admin", adminRouter);
-
 
 app.listen(PORT, () => {
   console.log(`running server on ${PORT}`);

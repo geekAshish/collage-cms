@@ -11,3 +11,10 @@ export const CreateUserSchema = z.object({
   password: z.string(),
   phone: z.string
 })
+
+
+export const SendSchema = z.object({
+  to: z.string(),
+  amount: z.number(),
+  memo: z.string().optional()
+})
