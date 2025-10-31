@@ -85,6 +85,28 @@ app.get("/calendar/:courseId", auth, async (req, res) => {
   })
 })
 
+app.get("/courses", auth, async (req, res) => {
+  const courses = await prismaClient.course.findMany({
+    where: {
+      purchases: {
+        some: {
+          userId: req.userId,
+        }
+      }
+    }
+  })
+
+  res.json({
+    courses: courses.map((c) => {
+      return {
+        id: c.id,
+        title: c.title,
+        slug: c.slug
+      }
+    })
+  })
+})
+
 
 app.listen(PORT, () => {
   console.log(`running server on ${PORT}`);
