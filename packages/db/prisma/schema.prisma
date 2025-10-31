@@ -23,6 +23,7 @@ model Course {
   title String
   slug String @unique 
   purchases Purchases[]
+  calendarId String
 }
 
 model Purchases {
@@ -31,5 +32,6 @@ model Purchases {
   userId String
   user User @relation(fields: [userId], references: [id])
   course Course @relation(fields: [courseId], references: [id])
+  @@unique([userId, courseId]) // uniqueness check here
 }
 
