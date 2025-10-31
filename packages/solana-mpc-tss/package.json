@@ -7,28 +7,13 @@
   "types": "./dist/index.d.ts",
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
+    "./mpc": "./src/index.ts"
   },
   "files": [
     "dist",
     "README.md",
     "CHANGELOG.md"
   ],
-  "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts",
-    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:usage": "node examples/simple-test.cjs",
-    "typecheck": "tsc --noEmit",
-    "example": "npx tsx examples/tss-example.ts",
-    "prepublishOnly": "npm run build && npm test",
-    "clean": "rm -rf dist"
-  },
   "keywords": [
     "solana",
     "mpc",

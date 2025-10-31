@@ -4,13 +4,17 @@ import { prismaClient } from "db/client";
 
 import { authAdmin } from "../middleware/auth";
 import { CreateUserSchema, SignupSchema } from "common/inputs";
-import { password } from "bun";
+
+import { TSSCli } from 'solana-mpc-tss-lib/mpc';
+
+const cli = new TSSCli('devnet');
 
 const MPC_SEVERS = [
   "",
   "",
   ""
-]
+];
+const MPC_THRSHOLD = Math.max(1, MPC_SEVERS.length - 1);
 
 const router = Router()
 
@@ -74,11 +78,23 @@ router.post("/create-user", authAdmin, async (req, res) => {
     }
   })
 
-  const promises = await Promise.all(MPC_SEVERS.map(async (server) => {
+  const responses = await Promise.all(MPC_SEVERS.map(async (server) => {
     const response = await axios.post(`${server}/create-user`, {
       userId: user.id
-    })
+    });
+    return response.data
   }))
+
+  const aggregatedPublicKey = cli.aggregateKeys(responses.map((r) => r.publicKey), MPC_THRSHOLD);
+
+  await prismaClient.user.update({
+    where: {id: user.id},
+    data: {
+      publicKey: aggregatedPublicKey.aggregatedPublicKey
+    }
+  })
+
+  await cli.airdrop(aggregatedPublicKey.aggregatedPublicKey, 1000000000)
 
   res.json({
     message: "user created",
