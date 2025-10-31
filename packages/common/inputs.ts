@@ -9,5 +9,5 @@ export const SignupSchema = z.object({
 export const CreateUserSchema = z.object({
   email: z.string(),
   password: z.string(),
-  number: z.string
+  phone: z.string
 })

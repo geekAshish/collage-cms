@@ -3,7 +3,8 @@ import jwt from 'jsonwebtoken';
 import { prismaClient } from "db/client";
 
 import { authAdmin } from "../middleware/auth";
-import { SignupSchema } from "common/inputs";
+import { CreateUserSchema, SignupSchema } from "common/inputs";
+import { password } from "bun";
 
 const MPC_SEVERS = [
   "",
@@ -56,13 +57,33 @@ router.post("/signin", async (req, res) => {
 
 
 router.post("/create-user", authAdmin, async (req, res) => {
-  const {success, data} = SignupSchema.safeParse(req.body);
+  const {success, data} = CreateUserSchema.safeParse(req.body);
 
   if (!success) {
     res.status(403).json({
       message: "Incorrect credentials"
     })
   }
+
+  const user = await prismaClient.user.create({
+    data: {
+      email: data?.email,
+      password: data?.password,
+      phone: data?.phone,
+      role: "USER"
+    }
+  })
+
+  const promises = await Promise.all(MPC_SEVERS.map(async (server) => {
+    const response = await axios.post(`${server}/create-user`, {
+      userId: user.id
+    })
+  }))
+
+  res.json({
+    message: "user created",
+    user
+  })
 })
 
 
