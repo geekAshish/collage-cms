@@ -16,6 +16,7 @@ model User {
   phone String @unique
   password String
   purchases Purchases[]
+  role Role @default(USER)
 }
 
 model Course {
@@ -35,3 +36,7 @@ model Purchases {
   @@unique([userId, courseId]) // uniqueness check here
 }
 
+enum Role {
+  ADMIN
+  USER
+}
