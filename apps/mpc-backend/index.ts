@@ -14,7 +14,7 @@ app.post("/create-user", async (req, res) => {
   const { userId } = req.body;
   
   const participant1 = await cli.generate();
-  prismaClient.keyShare.create({
+  await prismaClient.keyShare.create({
     data: {
       userId,
       publicKey: participant1.publicKey,
@@ -55,7 +55,7 @@ app.post('/send/step-1', async (req, res) => {
   })
 })
 
-app.post('/send/step-1', async (req, res) => {
+app.post('/send/step-2', async (req, res) => {
   const { to, amount, userId, recentBlockhash, step1Response, allPublicNonces } = req.body;
   const user = await prismaClient.keyShare.findFirst({
     where: {

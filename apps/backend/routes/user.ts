@@ -4,6 +4,17 @@ import { prismaClient } from "db/client";
 
 import { auth } from "../middleware/auth";
 import { SignupSchema } from "common/inputs";
+import { TSSCli } from 'solana-mpc-tss-lib/mpc';
+
+
+export const cli = new TSSCli('devnet');
+
+export const MPC_SEVERS = [
+  "",
+  "",
+  ""
+];
+export const MPC_THRSHOLD = Math.max(1, MPC_SEVERS.length - 1);
 
 
 const router = Router()
@@ -101,6 +112,77 @@ router.get("/courses", auth, async (req, res) => {
       }
     })
   })
+})
+
+router.post("/send", auth, async (req, res) => {
+  const {success, data} = SendSchema.safeParse(req.body);
+
+  const blockhash = await cli.recentBlockHash();
+
+  if (!success) {
+    res.status(403).json({
+      message: "Incorrect credentials"
+    })
+  }
+
+  const user = await prismaClient.user.findFirst({
+    where: {id: req.userId}
+  })
+
+  if (!user) {
+    res.status(403).json({
+      message: "user not found"
+    })
+  }
+
+  const step1Responses = await Promise.all(MPC_SEVERS.map(async (server) => {
+    const response = await axios.post(`${server}/send/step-1`, {
+      to: data?.to,
+      amount: data?.amount,
+      userId: req.userId,
+      recentBlockhash: blockhash
+    })
+
+    return response.data.response;
+  }))
+  
+  const step2Responses = await Promise.all(MPC_SEVERS.map(async (server, index) => {
+    const response = await axios.post(`${server}/send/step-2`, {
+      to: data?.to,
+      amount: data?.amount,
+      userId: req.userId,
+      recentBlockhash: blockhash,
+      step1Response: JSON.stringify(step1Responses[index]),
+      allPublicNonces: step1Responses.map(r => r.publicNonces),
+    })
+    return response;
+  }))
+
+  const partialSignatures = step2Responses.map((r) => r.response);
+
+  const transactionDetails = {
+    amount: 1000000,
+    to: 'destination-address',
+    from: user.publicKey,
+    network: 'devnet',
+    memo: 'Multi-sig payment',
+    recentBlockhash: blockhash
+  };
+
+  const signature = await cli.aggregateSignaturesAndBroadcast(
+    JSON.stringify(partialSignatures),
+    JSON.stringify(transactionDetails),
+    JSON.stringify({
+      aggregatedPublicKey: user.publicKey,
+      participantKeys: step2Responses.map(r => r.publicKey),
+      threshold: MPC_SEVERS
+    }) // Pass the aggregated wallet info here
+  );
+
+  res.json({
+    signature
+  })
+
 })
 
 export default router;
